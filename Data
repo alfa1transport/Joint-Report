@@ -1,0 +1,317 @@
+function onOpen() 
+{ 
+  
+  // Try New Google Sheets method
+  try{
+    var ui = SpreadsheetApp.getUi();
+    ui.createMenu('Alfa-One')
+    .addItem('Timesheet Check', 'TimesheetCheck')
+    .addItem('Backup Timesheets', 'BackupTimeSheets')
+    .addItem('Backup Confirmed Runs', 'BackupConfirmedRuns')
+  //  .addItem('Archive Sheet1', 'archiveSheet1')
+    .addToUi(); 
+  } 
+  
+  // Log the error
+  catch (e){Logger.log(e)}
+  
+  // Use old Google Spreadsheet method
+  finally{
+//    var items = [
+//      {name: 'Download Confirmed Runs', functionName: 'ShowRunDialog'},
+//      {name: 'Backup Weekly Report', functionName: 'backupWeeklyReport'}//,
+//      {name: 'Show sidebar', functionName: 'showSidebar'}, 
+//      {name: 'Archive Sheet1', functionName: 'archiveSheet1'}
+//   ];
+//    var ss1 = SpreadsheetApp;
+//      ss1.addMenu('Alfa-One', items);
+  }
+}
+
+function TravelTimeFleetTransferIncab()
+{
+  try
+  {
+    SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Timesheets').activate();
+    var TimeSheets = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    
+    var lastrow = TimeSheets.getLastRow();
+    
+    for (var TimeSheetsRowNum=2; TimeSheetsRowNum<=lastrow; TimeSheetsRowNum++) 
+    {
+      var checkString = TimeSheets.getRange(TimeSheetsRowNum, 12).getValue();
+      if (checkString.indexOf("TRAVEL TIME")>-1) {
+        TimeSheets.getRange(TimeSheetsRowNum, 13).setValue("TRAVEL TIME");
+      }
+      else if (checkString.indexOf("TRUCK SERVICE")>-1) {
+        TimeSheets.getRange(TimeSheetsRowNum, 13).setValue("TRUCK SERVICES");
+      }
+      else if (checkString.indexOf("INCAB")>-1) {
+        TimeSheets.getRange(TimeSheetsRowNum, 13).setValue("INCAB");
+      }
+      else if (checkString.indexOf("FLEET TRANSFER")>-1) {
+        TimeSheets.getRange(TimeSheetsRowNum, 13).setValue("FLEET TRANSFER");
+      }     
+    } 
+  }
+  catch (e)
+  {
+    Logger.log('Function Name: Backup. Error:'+e);
+  }
+  finally
+  {
+    SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();  
+  }
+}
+
+function TimesheetCheck()
+{
+  try
+  {
+     SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Confirmed Runs').activate();
+     var ConfiremedRuns = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+     var ConfirmedRunsLastRow = ConfiremedRuns.getLastRow();
+  
+     SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Timesheets').activate();
+     var TimeSheetReport = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+     var TimeSheetReportLastRow = TimeSheetReport.getLastRow();
+    
+     for (var ConfirmedRunsRowNum=2; ConfirmedRunsRowNum<=ConfirmedRunsLastRow; ConfirmedRunsRowNum++)
+    // for (var ConfirmedRunsRowNum=2; ConfirmedRunsRowNum<=100; ConfirmedRunsRowNum++)
+      {  
+        var status = ConfiremedRuns.getRange(ConfirmedRunsRowNum,22).getValue().trim();
+        var ConfirmedRunCheckString = ConfiremedRuns.getRange(ConfirmedRunsRowNum,20).getValue().trim();
+        ConfirmedRunCheckString = ConfirmedRunCheckString.toUpperCase();
+        var routeID = ConfiremedRuns.getRange(ConfirmedRunsRowNum,19).getValue().trim();
+        if (status == 'DOWNLOADED FROM LINFOX')
+        {
+          for (var TimeSheetReportRowNum=2; TimeSheetReportRowNum<=TimeSheetReportLastRow; TimeSheetReportRowNum++)
+        //  for (var TimeSheetReportRowNum=2; TimeSheetReportRowNum<=300; TimeSheetReportRowNum++)
+               {
+                 var TimesheetSubmissionDate = TimeSheetReport.getRange(TimeSheetReportRowNum, 2).getValue();
+                 TimesheetSubmissionDate = TimesheetSubmissionDate.toLocaleTimeString('en-GB');
+                 var timesheetSubmitted = TimeSheetReport.getRange(TimeSheetReportRowNum, 13).getValue().trim();
+                 var TimesheetCheckString = TimeSheetReport.getRange(TimeSheetReportRowNum, 12).getValue().trim();
+                 TimesheetCheckString = TimesheetCheckString.toUpperCase();
+                 var ts_hours = TimeSheetReport.getRange(TimeSheetReportRowNum, 11).getValue();
+                 if ((timesheetSubmitted == '') && (ConfirmedRunCheckString == TimesheetCheckString))
+                 {
+                   TimeSheetReport.getRange(TimeSheetReportRowNum, 13).setValue('MATCHED RUN: '+routeID);
+                   ConfiremedRuns.getRange(ConfirmedRunsRowNum, 22).setValue('TIMESHEET PROVIDED: '+TimesheetSubmissionDate);
+                   ConfiremedRuns.getRange(ConfirmedRunsRowNum, 23).setValue(ts_hours);
+                 }
+               //  else 
+               //  {
+                //   ConfiremedRuns.getRange(ConfirmedRunsRowNum, 22).setValue('CHECK-NOT FOUND');
+                  // TimeSheetReport.getRange(TimeSheetReportRowNum, 13).setValue('CHECK-NOT FOUND');
+               //  } 
+               }
+        }
+      }
+  }
+  catch (e)
+  {
+    Logger.log('Function Name: TimesheetCheck. Error:'+e);
+  }
+  finally
+  {
+    //SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();  
+    TimesheetCheckNoStartTime();
+  }
+}
+
+
+function TimesheetCheckNoStartTime()
+{
+  try
+  {
+     SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Confirmed Runs').activate();
+     var ConfiremedRuns = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+     var ConfirmedRunsLastRow = ConfiremedRuns.getLastRow();
+  
+     SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Timesheets').activate();
+     var TimeSheetReport = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+     var TimeSheetReportLastRow = TimeSheetReport.getLastRow();
+
+     SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Matched with wrong start time').activate();
+     var NoStartTimeSheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+     var NoStartTimeSheetLastRow = NoStartTimeSheet.getLastRow();
+    
+     for (var ConfirmedRunsRowNum=2; ConfirmedRunsRowNum<=ConfirmedRunsLastRow; ConfirmedRunsRowNum++)
+      { 
+        var status = ConfiremedRuns.getRange(ConfirmedRunsRowNum,22).getValue().trim();
+        var ConfirmedRunCheckString = ConfiremedRuns.getRange(ConfirmedRunsRowNum,20).getValue().trim();
+        ConfirmedRunCheckString = ConfirmedRunCheckString.toUpperCase();
+        var routeID = ConfiremedRuns.getRange(ConfirmedRunsRowNum,19).getValue().trim();
+        var  ConfirmedRunsStartTime = ConfiremedRuns.getRange(ConfirmedRunsRowNum,6).getValue();
+        if (status == 'DOWNLOADED FROM LINFOX')
+        {
+          for (var TimeSheetReportRowNum=2; TimeSheetReportRowNum<=TimeSheetReportLastRow; TimeSheetReportRowNum++)
+               {
+                 var TimesheetSubmissionDate = TimeSheetReport.getRange(TimeSheetReportRowNum, 2).getValue().toLocaleTimeString('en-GB');
+                 var timesheetSubmitted = TimeSheetReport.getRange(TimeSheetReportRowNum, 13).getValue().trim();
+                 var TimesheetCheckString = TimeSheetReport.getRange(TimeSheetReportRowNum, 12).getValue().trim();
+                 TimesheetCheckString = TimesheetCheckString.toUpperCase();
+                 var TimesheetStartTime = TimeSheetReport.getRange(TimeSheetReportRowNum, 9).getValue();
+                 var ts_hours = TimeSheetReport.getRange(TimeSheetReportRowNum, 11).getValue();
+                 var Driver_N = TimeSheetReport.getRange(TimeSheetReportRowNum, 3).getValue();
+                 var shift_D = TimeSheetReport.getRange(TimeSheetReportRowNum, 7).getValue();
+
+                 if ((timesheetSubmitted == '') && (ConfirmedRunCheckString == TimesheetCheckString))
+                 {
+                   TimeSheetReport.getRange(TimeSheetReportRowNum, 13).setValue('MATCHED RUN: '+routeID);
+                   ConfiremedRuns.getRange(ConfirmedRunsRowNum, 22).setValue('TIMESHEET PROVIDED: '+TimesheetSubmissionDate);
+                   ConfiremedRuns.getRange(ConfirmedRunsRowNum, 23).setValue(ts_hours);
+
+                   NoStartTimeSheet.getRange(NoStartTimeSheetLastRow+1, 1).setValue(Driver_N);
+                   NoStartTimeSheet.getRange(NoStartTimeSheetLastRow+1, 2).setValue(shift_D);
+                   NoStartTimeSheet.getRange(NoStartTimeSheetLastRow+1, 3).setValue(TimesheetCheckString);
+                   NoStartTimeSheet.getRange(NoStartTimeSheetLastRow+1, 4).setValue(TimesheetStartTime);
+                   NoStartTimeSheet.getRange(NoStartTimeSheetLastRow+1, 5).setValue(ConfirmedRunsStartTime);
+                   NoStartTimeSheet.getRange(NoStartTimeSheetLastRow+1, 6).setValue("=D"+(NoStartTimeSheetLastRow+1)+"-E"+(NoStartTimeSheetLastRow+1));
+                 }
+               //  else 
+               //  {
+                //   ConfiremedRuns.getRange(ConfirmedRunsRowNum, 22).setValue('CHECK-NOT FOUND');
+                  // TimeSheetReport.getRange(TimeSheetReportRowNum, 13).setValue('CHECK-NOT FOUND');
+               //  } 
+               }
+        }
+      }
+  }
+  catch (e)
+  {
+    Logger.log('Function Name: TimesheetCheckNoStartTime. Error:'+e);
+  }
+  finally
+  {
+    SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();  
+  }
+}
+
+
+
+
+function BackupTimeSheets()
+{
+  try
+  {
+    var currentDate = new Date();
+    SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Timesheets').activate();
+    var TimeSheets = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    
+    var appBackup = SpreadsheetApp.openById('1-1zNQ-3bkkTz9hn24wDzhYQ5T2orKc6lcqg7qpEGD44');
+    var TimeSheetsBackup = appBackup.getSheetByName('Timesheets');
+    var lRow = TimeSheets.getLastRow();
+    for (var TimeSheetsRowNum=lRow; TimeSheetsRowNum>=2; TimeSheetsRowNum--) 
+    {
+      var shiftDateStr = TimeSheets.getRange(TimeSheetsRowNum, 7, 1, 1).getValue();
+      var s1 = shiftDateStr.substring(3,5) + '/'+shiftDateStr.substring(0,2) +'/'+shiftDateStr.substring(6, shiftDateStr.length)
+      var shiftDate = new Date(s1);
+      var sec=1000;
+      var min=60*sec;
+      var hour=60*min;
+      var day=24*hour;
+      var diff=currentDate-shiftDate;
+      var days=Math.floor(diff/day);
+      
+      var status = TimeSheets.getRange(TimeSheetsRowNum, 13).getValue();
+      status = status.toUpperCase();
+      status = status.trim();
+      var company = TimeSheets.getRange(TimeSheetsRowNum, 1).getValue();
+      var str = status.substring(0, 11)
+      str = str.toUpperCase();
+      if (days > 2)
+      {
+        if (str == 'MATCHED RUN' || status == 'SPLIT RUN' || status == 'TRAVEL TIME' || status == 'SPLIT RUNS' || status == 'TRUCK SERVICE' || status == 'TRUCK SERVICES' || 
+            status == 'RUNS WERE NOT DOWNLOADED FROM LFX' || status == 'FLEET TRANSFER' || 
+            status == 'DUPLICATED' || status == 'ADMIN APPROVED' || status == 'INCAB' || status == 'ADMIN REJECTED')
+        {
+        var rangeToCopy = TimeSheets.getRange(TimeSheetsRowNum, 1, 1, 14).getValues();
+        var TimeSheetsBackupLastRow = TimeSheetsBackup.getLastRow();
+        TimeSheetsBackup.getRange(TimeSheetsBackupLastRow+1, 1, 1, 14).setValues(rangeToCopy);
+        TimeSheets.deleteRow(TimeSheetsRowNum);
+        }
+      }     
+   } 
+  }
+  catch (e)
+  {
+    Logger.log('Function Name: Backup. Error:'+e);
+  }
+  finally
+  {
+    SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();  
+  }
+}
+
+function BackupConfirmedRuns()
+{
+  try
+  {
+    var currentDate = new Date();
+    SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Confirmed Runs").activate();
+    var thisSheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    
+    var appBackup = SpreadsheetApp.openById('1-1zNQ-3bkkTz9hn24wDzhYQ5T2orKc6lcqg7qpEGD44');
+    var TimeSheetsBackup = appBackup.getSheetByName('Confirmed Runs');
+    var lRow = thisSheet.getLastRow();
+
+
+    for (var rowNum=lRow; rowNum >=2; rowNum--)
+    {
+      var status = thisSheet.getRange(rowNum, 22).getValue().trim();
+      status = status.toUpperCase();
+      var counted = thisSheet.getRange(rowNum, 24).getValue().trim();
+      var shiftDateString = thisSheet.getRange(rowNum, 6).getValue();
+      //var shiftDate = new Date(shiftDateString.substring(3,5) + '/' +shiftDateString.substring(0,3) +'/'+shiftDateString.substring(6, shiftDateString.length));
+      var sec=1000;
+      var min=60*sec;
+      var hour=60*min;
+      var day=24*hour;
+      var diff = currentDate-shiftDateString;
+      var days = Math.floor(diff/day);
+      
+      //if days >= 2 {
+        
+      if (days >= 0){
+        if (
+          (status.substring(0,18) == 'TIMESHEET PROVIDED' && counted == 'COUNTED') 
+        ||
+        (counted == 'ADMIN BACKUP')
+        ) {
+                  var rangeToCopy = thisSheet.getRange(rowNum, 1, 1, 25).getValues();
+        var lastRow = TimeSheetsBackup.getLastRow();
+        var writeToRow = TimeSheetsBackup.getRange(lastRow+1, 1, 1, 25).setValues(rangeToCopy);
+        thisSheet.deleteRow(rowNum);
+
+        }
+
+      }
+    }     
+  }
+  catch (e)
+  {
+    Logger.log(e);
+  }
+  finally
+  {
+    Logger.log('Confirmed Run Backup completed successfully');
+    SendEmailtoAdmin()
+  }
+}
+
+function SendEmailtoAdmin()
+{
+  try
+  {
+  }
+  catch (e)
+  {
+    Logger.log(e);
+  }
+  finally
+  {
+    
+  }
+}
